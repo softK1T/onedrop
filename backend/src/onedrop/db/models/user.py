@@ -53,6 +53,27 @@ class UserSettings(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "morning_digest_hour >= 0 AND morning_digest_hour <= 23",
             name="morning_digest_hour_range",
         ),
+        CheckConstraint(
+            "quiet_hours_start >= 0 AND quiet_hours_start <= 23",
+            name="quiet_hours_start_range",
+        ),
+        CheckConstraint(
+            "quiet_hours_end >= 0 AND quiet_hours_end <= 23",
+            name="quiet_hours_end_range",
+        ),
+        CheckConstraint(
+            "task_reminder_lead_minutes >= 0 AND task_reminder_lead_minutes <= 1440",
+            name="task_reminder_lead_minutes_range",
+        ),
+        CheckConstraint(
+            "event_reminder_lead_minutes >= 0 AND event_reminder_lead_minutes <= 1440",
+            name="event_reminder_lead_minutes_range",
+        ),
+        CheckConstraint(
+            "budget_warning_threshold_percent >= 1 "
+            "AND budget_warning_threshold_percent <= 100",
+            name="budget_warning_threshold_percent_range",
+        ),
     )
 
     user_id: Mapped[UUID] = mapped_column(
@@ -85,6 +106,21 @@ class UserSettings(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     morning_digest_hour: Mapped[int] = mapped_column(
         Integer, nullable=False, default=8, server_default="8"
+    )
+    quiet_hours_start: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=22, server_default="22"
+    )
+    quiet_hours_end: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=7, server_default="7"
+    )
+    task_reminder_lead_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=30, server_default="30"
+    )
+    event_reminder_lead_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=60, server_default="60"
+    )
+    budget_warning_threshold_percent: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=80, server_default="80"
     )
     consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     allow_training: Mapped[bool] = mapped_column(
