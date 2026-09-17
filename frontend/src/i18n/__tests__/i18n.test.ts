@@ -1,0 +1,3 @@
+import { describe, expect, it } from 'vitest';
+import { DEFAULT_LOCALE,MESSAGES,SUPPORTED_LOCALES,normaliseLocale,translate } from '@/i18n';
+describe('i18n',()=>{it('ships tables for every locale',()=>expect(Object.keys(MESSAGES).sort()).toEqual([...SUPPORTED_LOCALES].sort()));it('shares keys',()=>{const keys=Object.keys(MESSAGES.en).sort();for(const locale of SUPPORTED_LOCALES)expect(Object.keys(MESSAGES[locale]).sort()).toEqual(keys)});it('normalises locale',()=>{expect(normaliseLocale('ru-RU')).toBe('ru');expect(normaliseLocale('de')).toBe(DEFAULT_LOCALE)});it('interpolates',()=>expect(translate('en','subscription.price',{price:250,days:30})).toContain('250'));it('returns unknown key',()=>expect(translate('en','x')).toBe('x'))});

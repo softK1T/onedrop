@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --od-surface:#f5f7f8; --od-surface-raised:#fff; --od-ink:#16211f; --od-ink-muted:#5d6b69; --od-line:#dfe5e4; --od-accent:#0f766e; --od-accent-ink:#fff; --od-positive:#157f52; --od-warning:#a8620a; --od-danger:#b4322c; }
+[data-theme='dark'] { --od-surface:#12181a; --od-surface-raised:#1b2326; --od-ink:#eef3f2; --od-ink-muted:#9aa8a6; --od-line:#2a3538; --od-accent:#2dd4bf; --od-accent-ink:#06231f; --od-positive:#46c48a; --od-warning:#e0a33c; --od-danger:#e57368; }
+@layer base { html,body,#root { @apply h-full; } body { @apply bg-surface text-ink font-sans antialiased; margin:0; overflow-x:hidden; } :focus-visible { @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-surface; } }
+@layer components { .od-card { @apply rounded-card border border-line bg-surface-raised p-4; } .od-button { @apply inline-flex min-h-touch min-w-touch items-center justify-center gap-2 rounded-card px-4 text-base font-medium transition-colors; } .od-button-primary { @apply od-button bg-accent text-accent-ink active:opacity-90; } .od-button-ghost { @apply od-button border border-line bg-surface-raised text-ink active:opacity-90; } .od-skeleton { @apply animate-pulse rounded-card bg-line/60; } .od-label { @apply text-sm font-medium text-ink-muted; } }
