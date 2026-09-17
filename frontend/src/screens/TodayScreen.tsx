@@ -15,6 +15,7 @@ export function TodayScreen(): JSX.Element {
   const query = useQuery({ queryKey: ['dashboard', 'today'], queryFn: () => api.get<Dashboard>('/dashboard/today') });
   if (query.isLoading) return <section className="p-4" aria-busy="true"><div className="od-skeleton h-8 w-28" /><div className="mt-5 grid grid-cols-2 gap-3"><div className="od-skeleton h-20" /><div className="od-skeleton h-20" /></div></section>;
   if (query.isError) return <section className="p-4"><ErrorCard message="Could not load your dashboard." retry={() => void query.refetch()} /></section>;
+  if (!query.data) return <section className="p-4"><EmptyCard>{translate('en', 'today.empty')}</EmptyCard></section>;
   const data = query.data;
   return <section className="p-4"><ScreenHeader title={translate('en', 'today.title')} actionTo="/capture" actionLabel="+" />
     {data.budget_warning && <div className="mb-3 rounded-card bg-warning/15 p-3 text-sm text-warning">{translate('en', 'today.budgetWarning')}</div>}
