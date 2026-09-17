@@ -1,0 +1,123 @@
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from '@/i18n';
+
+const en: Record<string, string> = {
+  inbox: 'Inbox',
+  filterAll: 'All',
+  filterNeedsConfirmation: 'Needs confirmation',
+  filterFailed: 'Failed',
+  filterCompleted: 'Completed',
+  filterUndone: 'Undone',
+  retry: 'Retry',
+  undo: 'Undo all',
+  helpful: 'Good result',
+  notHelpful: 'Bad result',
+  rated: 'Thanks, the rating was saved.',
+  makeTask: 'To task',
+  makeNote: 'To note',
+  makeEvent: 'To event',
+  eventStart: 'Event start',
+  create: 'Create',
+  cancel: 'Cancel',
+  createdTask: 'A task was created from this capture.',
+  createdNote: 'A note was created from this capture.',
+  createdEvent: 'An event was created from this capture.',
+  noText: 'This capture has no text to convert.',
+  empty: 'No captures yet.',
+  loadFailed: 'Could not load captures.',
+  actionFailed: 'That action did not go through.',
+  tryAgain: 'Try again',
+};
+
+const ru: Record<string, string> = {
+  inbox: 'Входящие',
+  filterAll: 'Все',
+  filterNeedsConfirmation: 'Нужно подтверждение',
+  filterFailed: 'Ошибки',
+  filterCompleted: 'Готовые',
+  filterUndone: 'Отменённые',
+  retry: 'Повторить',
+  undo: 'Отменить всё',
+  helpful: 'Хороший результат',
+  notHelpful: 'Плохой результат',
+  rated: 'Спасибо, оценка сохранена.',
+  makeTask: 'В задачу',
+  makeNote: 'В заметку',
+  makeEvent: 'В событие',
+  eventStart: 'Начало события',
+  create: 'Создать',
+  cancel: 'Отмена',
+  createdTask: 'Из записи создана задача.',
+  createdNote: 'Из записи создана заметка.',
+  createdEvent: 'Из записи создано событие.',
+  noText: 'В этой записи нет текста для разбора.',
+  empty: 'Записей пока нет.',
+  loadFailed: 'Не удалось загрузить записи.',
+  actionFailed: 'Действие не выполнилось.',
+  tryAgain: 'Повторить',
+};
+
+const pl: Record<string, string> = {
+  inbox: 'Skrzynka',
+  filterAll: 'Wszystkie',
+  filterNeedsConfirmation: 'Wymaga potwierdzenia',
+  filterFailed: 'Błędy',
+  filterCompleted: 'Gotowe',
+  filterUndone: 'Cofnięte',
+  retry: 'Ponów',
+  undo: 'Cofnij wszystko',
+  helpful: 'Dobry wynik',
+  notHelpful: 'Zły wynik',
+  rated: 'Dzięki, ocena zapisana.',
+  makeTask: 'Na zadanie',
+  makeNote: 'Na notatkę',
+  makeEvent: 'Na wydarzenie',
+  eventStart: 'Początek wydarzenia',
+  create: 'Utwórz',
+  cancel: 'Anuluj',
+  createdTask: 'Z wpisu powstało zadanie.',
+  createdNote: 'Z wpisu powstała notatka.',
+  createdEvent: 'Z wpisu powstało wydarzenie.',
+  noText: 'Ten wpis nie ma tekstu do przetworzenia.',
+  empty: 'Brak wpisów.',
+  loadFailed: 'Nie udało się wczytać wpisów.',
+  actionFailed: 'Akcja nie została wykonana.',
+  tryAgain: 'Spróbuj ponownie',
+};
+
+const uk: Record<string, string> = {
+  inbox: 'Вхідні',
+  filterAll: 'Усі',
+  filterNeedsConfirmation: 'Потрібне підтвердження',
+  filterFailed: 'Помилки',
+  filterCompleted: 'Готові',
+  filterUndone: 'Скасовані',
+  retry: 'Повторити',
+  undo: 'Скасувати все',
+  helpful: 'Гарний результат',
+  notHelpful: 'Поганий результат',
+  rated: 'Дякуємо, оцінку збережено.',
+  makeTask: 'У завдання',
+  makeNote: 'У замітку',
+  makeEvent: 'У подію',
+  eventStart: 'Початок події',
+  create: 'Створити',
+  cancel: 'Скасувати',
+  createdTask: 'З запису створено завдання.',
+  createdNote: 'З запису створено замітку.',
+  createdEvent: 'З запису створено подію.',
+  noText: 'У цьому записі немає тексту для розбору.',
+  empty: 'Записів ще немає.',
+  loadFailed: 'Не вдалося завантажити записи.',
+  actionFailed: 'Дія не виконалася.',
+  tryAgain: 'Спробувати знову',
+};
+
+export const INBOX_MESSAGES: Record<Locale, Record<string, string>> = { en, ru, pl, uk };
+
+export function inboxLabel(locale: string | null | undefined, key: string): string {
+  const short = (locale ?? DEFAULT_LOCALE).split('-')[0]?.toLowerCase() ?? DEFAULT_LOCALE;
+  const resolved = (SUPPORTED_LOCALES as readonly string[]).includes(short)
+    ? (short as Locale)
+    : DEFAULT_LOCALE;
+  return INBOX_MESSAGES[resolved][key] ?? INBOX_MESSAGES[DEFAULT_LOCALE][key] ?? key;
+}
