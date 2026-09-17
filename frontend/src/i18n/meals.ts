@@ -1,0 +1,123 @@
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from '@/i18n';
+
+const en: Record<string, string> = {
+  meals: 'Meals',
+  day: 'Day',
+  dailyTotals: 'Today in numbers',
+  mealsCount: 'meals',
+  calories: 'Calories',
+  protein: 'Protein',
+  fat: 'Fat',
+  carbs: 'Carbs',
+  approximate: 'approximate',
+  newMeal: 'New meal',
+  mealTitle: 'What did you eat?',
+  mealType: 'Meal',
+  add: 'Add meal',
+  edit: 'Correct calories',
+  save: 'Save',
+  cancel: 'Cancel',
+  remove: 'Delete',
+  empty: 'Nothing logged for this day.',
+  loadFailed: 'Could not load meals.',
+  saveFailed: 'That change was not saved and has been reverted.',
+  retry: 'Try again',
+  type_breakfast: 'Breakfast',
+  type_lunch: 'Lunch',
+  type_dinner: 'Dinner',
+  type_snack: 'Snack',
+};
+
+const ru: Record<string, string> = {
+  meals: 'Питание',
+  day: 'День',
+  dailyTotals: 'День в цифрах',
+  mealsCount: 'приёмов пищи',
+  calories: 'Калории',
+  protein: 'Белки',
+  fat: 'Жиры',
+  carbs: 'Углеводы',
+  approximate: 'приблизительно',
+  newMeal: 'Новый приём пищи',
+  mealTitle: 'Что вы ели?',
+  mealType: 'Приём',
+  add: 'Добавить',
+  edit: 'Исправить калории',
+  save: 'Сохранить',
+  cancel: 'Отмена',
+  remove: 'Удалить',
+  empty: 'За этот день записей нет.',
+  loadFailed: 'Не удалось загрузить питание.',
+  saveFailed: 'Изменение не сохранено и было отменено.',
+  retry: 'Повторить',
+  type_breakfast: 'Завтрак',
+  type_lunch: 'Обед',
+  type_dinner: 'Ужин',
+  type_snack: 'Перекус',
+};
+
+const pl: Record<string, string> = {
+  meals: 'Posiłki',
+  day: 'Dzień',
+  dailyTotals: 'Dzień w liczbach',
+  mealsCount: 'posiłków',
+  calories: 'Kalorie',
+  protein: 'Białko',
+  fat: 'Tłuszcz',
+  carbs: 'Węglowodany',
+  approximate: 'w przybliżeniu',
+  newMeal: 'Nowy posiłek',
+  mealTitle: 'Co zjadłeś?',
+  mealType: 'Posiłek',
+  add: 'Dodaj posiłek',
+  edit: 'Popraw kalorie',
+  save: 'Zapisz',
+  cancel: 'Anuluj',
+  remove: 'Usuń',
+  empty: 'Brak wpisów na ten dzień.',
+  loadFailed: 'Nie udało się wczytać posiłków.',
+  saveFailed: 'Zmiana nie została zapisana i została cofnięta.',
+  retry: 'Spróbuj ponownie',
+  type_breakfast: 'Śniadanie',
+  type_lunch: 'Obiad',
+  type_dinner: 'Kolacja',
+  type_snack: 'Przekąska',
+};
+
+const uk: Record<string, string> = {
+  meals: 'Харчування',
+  day: 'День',
+  dailyTotals: 'День у цифрах',
+  mealsCount: 'прийомів їжі',
+  calories: 'Калорії',
+  protein: 'Білки',
+  fat: 'Жири',
+  carbs: 'Вуглеводи',
+  approximate: 'приблизно',
+  newMeal: 'Новий прийом їжі',
+  mealTitle: 'Що ви їли?',
+  mealType: 'Прийом',
+  add: 'Додати',
+  edit: 'Виправити калорії',
+  save: 'Зберегти',
+  cancel: 'Скасувати',
+  remove: 'Видалити',
+  empty: 'За цей день записів немає.',
+  loadFailed: 'Не вдалося завантажити харчування.',
+  saveFailed: 'Зміна не збереглася і була скасована.',
+  retry: 'Спробувати знову',
+  type_breakfast: 'Сніданок',
+  type_lunch: 'Обід',
+  type_dinner: 'Вечеря',
+  type_snack: 'Перекус',
+};
+
+export const MEAL_MESSAGES: Record<Locale, Record<string, string>> = { en, ru, pl, uk };
+
+export function mealLabel(locale: string | null | undefined, key: string): string {
+  const short = (locale ?? DEFAULT_LOCALE).split('-')[0]?.toLowerCase() ?? DEFAULT_LOCALE;
+  const resolved = (SUPPORTED_LOCALES as readonly string[]).includes(short)
+    ? (short as Locale)
+    : DEFAULT_LOCALE;
+  return MEAL_MESSAGES[resolved][key] ?? MEAL_MESSAGES[DEFAULT_LOCALE][key] ?? key;
+}
