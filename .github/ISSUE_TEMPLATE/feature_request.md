@@ -20,6 +20,6 @@ labels: enhancement
 
 ## Out of scope for the MVP?
 
-<!-- The MVP excludes calendar sync, Lifetime plan and non-Telegram clients. -->
+<!-- The MVP excludes calendar sync, Lifetime plan and non-Telegram calendar clients. -->
 
 ## Alternatives considered
