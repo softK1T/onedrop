@@ -1,12 +1,3 @@
-# OneDrop development stack.
-#
-# `docker compose up --build` starts PostgreSQL, Redis, MinIO, the migration job,
-# the API, the bot, the worker and the scheduler. The Mini App service is added
-# together with the frontend sources.
-#
-# With an empty TELEGRAM_BOT_TOKEN the bot container idles in a disabled state
-# instead of crash-looping, so demo mode works without any credentials.
-
 name: onedrop
 
 x-backend-env: &backend-env
@@ -30,131 +21,68 @@ x-backend-env: &backend-env
   BOT_MODE: ${BOT_MODE:-polling}
   AI_PROVIDER_MODE: ${AI_PROVIDER_MODE:-fake}
   OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-  OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-  OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
   STT_API_KEY: ${STT_API_KEY:-}
-  STT_BASE_URL: ${STT_BASE_URL:-https://api.openai.com/v1}
-  STT_MODEL: ${STT_MODEL:-whisper-1}
-  VISION_MODEL: ${VISION_MODEL:-openai/gpt-4o-mini}
   DEV_LOGIN_ENABLED: ${DEV_LOGIN_ENABLED:-true}
   DEFAULT_TIMEZONE: ${DEFAULT_TIMEZONE:-Europe/Warsaw}
   DEFAULT_BASE_CURRENCY: ${DEFAULT_BASE_CURRENCY:-PLN}
-  PRO_PRICE_STARS: ${PRO_PRICE_STARS:-250}
-  PRO_PERIOD_DAYS: ${PRO_PERIOD_DAYS:-30}
 
 x-backend: &backend
-  build:
-    context: ./backend
+  build: { context: ./backend }
   image: onedrop-backend:local
   environment: *backend-env
   restart: unless-stopped
-  depends_on:
-    migrate:
-      condition: service_completed_successfully
+  depends_on: { migrate: { condition: service_completed_successfully } }
 
 services:
   postgres:
     image: postgres:16
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-onedrop}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-onedrop}
-      POSTGRES_DB: ${POSTGRES_DB:-onedrop}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onedrop} -d ${POSTGRES_DB:-onedrop}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+    environment: { POSTGRES_USER: ${POSTGRES_USER:-onedrop}, POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-onedrop}, POSTGRES_DB: ${POSTGRES_DB:-onedrop} }
+    ports: ["${POSTGRES_PORT:-5432}:5432"]
+    volumes: ["postgres-data:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onedrop} -d ${POSTGRES_DB:-onedrop}"], interval: 10s, timeout: 5s, retries: 10 }
     restart: unless-stopped
-
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+    ports: ["${REDIS_PORT:-6379}:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 10s, timeout: 5s, retries: 10 }
     restart: unless-stopped
-
   minio:
     image: minio/minio:RELEASE.2024-09-13T20-26-02Z
     command: ["server", "/data", "--console-address", ":9001"]
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-onedrop}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-onedrop-dev-secret}
-    ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
+    environment: { MINIO_ROOT_USER: ${S3_ACCESS_KEY:-onedrop}, MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-onedrop-dev-secret} }
+    ports: ["${MINIO_PORT:-9000}:9000", "${MINIO_CONSOLE_PORT:-9001}:9001"]
+    volumes: ["minio-data:/data"]
     restart: unless-stopped
-
   migrate:
-    build:
-      context: ./backend
+    build: { context: ./backend }
     image: onedrop-backend:local
     environment: *backend-env
     command: ["alembic", "upgrade", "head"]
-    depends_on:
-      postgres:
-        condition: service_healthy
+    depends_on: { postgres: { condition: service_healthy } }
     restart: "no"
-
   api:
     <<: *backend
-    command:
-      [
-        "uvicorn",
-        "onedrop.main:app",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000",
-        "--proxy-headers",
-      ]
-    ports:
-      - "${API_PORT:-8000}:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_started
-      migrate:
-        condition: service_completed_successfully
-
+    command: ["uvicorn", "onedrop.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports: ["${API_PORT:-8000}:8000"]
+    depends_on: { postgres: { condition: service_healthy }, redis: { condition: service_healthy }, migrate: { condition: service_completed_successfully } }
   bot:
     <<: *backend
     command: ["python", "-m", "onedrop.bot.run"]
-
   worker:
     <<: *backend
     command: ["arq", "onedrop.workers.settings.WorkerSettings"]
-    depends_on:
-      redis:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-
+    depends_on: { redis: { condition: service_healthy }, migrate: { condition: service_completed_successfully } }
   scheduler:
     <<: *backend
     command: ["python", "-m", "onedrop.workers.scheduler"]
+  frontend:
+    build: { context: ./frontend }
+    image: onedrop-frontend:local
+    ports: ["${FRONTEND_PORT:-5173}:8080"]
+    environment: { VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1} }
+    depends_on: { api: { condition: service_started } }
+    restart: unless-stopped
 
-volumes:
-  postgres-data:
-  redis-data:
-  minio-data:
+volumes: { postgres-data: {}, redis-data: {}, minio-data: {} }
