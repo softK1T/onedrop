@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 CurrencyCode = Literal["PLN", "EUR", "USD", "UAH"]
 LocaleCode = Literal["en", "ru", "pl", "uk"]
+MAX_LEAD_MINUTES = 1440
 
 
 class StrictModel(BaseModel):
@@ -29,6 +30,11 @@ class UserSettingsResponse(BaseModel):
     morning_digest: bool
     budget_warnings: bool
     morning_digest_hour: int
+    quiet_hours_start: int
+    quiet_hours_end: int
+    task_reminder_lead_minutes: int
+    event_reminder_lead_minutes: int
+    budget_warning_threshold_percent: int
     allow_training: bool
     onboarding_completed: bool
     consent_at: datetime | None
@@ -46,6 +52,15 @@ class UserSettingsUpdate(StrictModel):
     morning_digest: bool | None = None
     budget_warnings: bool | None = None
     morning_digest_hour: int | None = Field(default=None, ge=0, le=23)
+    quiet_hours_start: int | None = Field(default=None, ge=0, le=23)
+    quiet_hours_end: int | None = Field(default=None, ge=0, le=23)
+    task_reminder_lead_minutes: int | None = Field(
+        default=None, ge=0, le=MAX_LEAD_MINUTES
+    )
+    event_reminder_lead_minutes: int | None = Field(
+        default=None, ge=0, le=MAX_LEAD_MINUTES
+    )
+    budget_warning_threshold_percent: int | None = Field(default=None, ge=1, le=100)
     allow_training: bool | None = None
     onboarding_completed: bool | None = None
     accept_consent: bool | None = None

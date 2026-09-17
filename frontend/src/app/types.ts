@@ -36,7 +36,13 @@ export interface Dashboard {
   events: EventRecord[];
   expenses_today_minor: number;
   base_currency: string;
-  nutrition: { calories: number; protein: number; fat: number; carbohydrates: number; contains_estimates: boolean };
+  nutrition: {
+    calories: number;
+    protein: number;
+    fat: number;
+    carbohydrates: number;
+    contains_estimates: boolean;
+  };
   budget_warning: boolean;
   ai: { plan: string; remaining: number };
 }
@@ -52,15 +58,28 @@ export interface InboxItem {
   created_at: string;
 }
 
+export interface UserSettings {
+  timezone: string;
+  base_currency: string;
+  monthly_budget_minor: number | null;
+  reminders_enabled: boolean;
+  task_reminders: boolean;
+  event_reminders: boolean;
+  habit_reminders: boolean;
+  morning_digest: boolean;
+  budget_warnings: boolean;
+  morning_digest_hour: number;
+  quiet_hours_start: number;
+  quiet_hours_end: number;
+  task_reminder_lead_minutes: number;
+  event_reminder_lead_minutes: number;
+  budget_warning_threshold_percent: number;
+  allow_training: boolean;
+}
+
 export interface UserProfile {
   first_name: string | null;
   username: string | null;
   locale: string;
-  settings: {
-    timezone: string;
-    base_currency: string;
-    monthly_budget_minor: number | null;
-    reminders_enabled: boolean;
-    allow_training: boolean;
-  };
+  settings: UserSettings;
 }
