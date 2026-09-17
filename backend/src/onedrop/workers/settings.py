@@ -16,6 +16,7 @@ from onedrop.workers.jobs import (
     process_image_capture,
     process_voice_capture,
 )
+from onedrop.workers.notifications import deliver_notifications, plan_notifications
 
 logger = get_logger(__name__)
 
@@ -40,6 +41,8 @@ class WorkerSettings:
         process_voice_capture,
         process_image_capture,
         dispatch_due_reminders,
+        plan_notifications,
+        deliver_notifications,
         cleanup_media,
     ]
     on_startup = startup

@@ -1,8 +1,9 @@
 """Reminder scheduler process.
 
-A small loop that survives restarts: every tick it asks the database for due
-reminders, and every reminder carries a unique idempotency key, so nothing is
-sent twice even if two schedulers overlap.
+A small loop that survives restarts. On every tick it plans due notifications,
+then delivers everything whose ``run_at`` has passed. Planning is idempotent by
+dedup key and delivery claims rows with row-level locks, so an overlapping
+second scheduler cannot send anything twice.
 
 Run with: `python -m onedrop.workers.scheduler`
 """
@@ -18,10 +19,12 @@ from onedrop.config import get_settings
 from onedrop.db.session import dispose_engine
 from onedrop.logging import configure_logging, get_logger
 from onedrop.workers.jobs import cleanup_media, dispatch_due_reminders
+from onedrop.workers.notifications import deliver_notifications, plan_notifications
 
 logger = get_logger(__name__)
 
 TICK_SECONDS = 60
+PLAN_INTERVAL_SECONDS = 300
 CLEANUP_HOUR_UTC = 3
 
 
@@ -29,10 +32,18 @@ async def run_scheduler(stop: asyncio.Event) -> None:
     settings = get_settings()
     logger.info("scheduler.startup", tick_seconds=TICK_SECONDS, env=settings.app_env)
     last_cleanup_day: int | None = None
+    last_plan: datetime | None = None
 
     while not stop.is_set():
         now = datetime.now(tz=UTC)
         try:
+            if (
+                last_plan is None
+                or (now - last_plan).total_seconds() >= PLAN_INTERVAL_SECONDS
+            ):
+                await plan_notifications({})
+                last_plan = now
+            await deliver_notifications({})
             await dispatch_due_reminders({})
             if now.hour == CLEANUP_HOUR_UTC and last_cleanup_day != now.day:
                 await cleanup_media({})
