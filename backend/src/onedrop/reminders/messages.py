@@ -107,9 +107,10 @@ def format_local_time(moment: str | None, timezone: str) -> str:
         return "-"
     if parsed.tzinfo is None:
         return "-"
+    # An unknown timezone must never break delivery: fall back to the raw offset.
     try:
         zone = ZoneInfo(timezone)
-    except Exception:  # noqa: BLE001 - unknown timezone must not break delivery
+    except (KeyError, ValueError):
         return parsed.strftime("%H:%M")
     return parsed.astimezone(zone).strftime("%H:%M")
 

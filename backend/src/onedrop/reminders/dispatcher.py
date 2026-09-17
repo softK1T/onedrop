@@ -182,11 +182,12 @@ class NotificationDispatcher:
 
     async def _deliver(self, claim: _Claim) -> tuple[bool, str | None]:
         text = render_notification(claim.locale, claim.kind, claim.payload)
+        # Any transport failure must be recorded and retried, never crash the pass.
         try:
             delivered = await self._sender(
                 telegram_user_id=claim.telegram_user_id, text=text
             )
-        except Exception as exc:  # noqa: BLE001 - transport errors must be retried
+        except Exception as exc:
             return False, f"{type(exc).__name__}: {exc}"
         return delivered, None if delivered else "transport rejected the message"
 

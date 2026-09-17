@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import pytest
-from sqlalchemy import delete, func, select
+from sqlalchemy import Connection, delete, func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -39,11 +39,7 @@ from onedrop.reminders.repository import ScheduledNotificationRepository
 
 pytestmark = pytest.mark.integration
 
-TABLES = [
-    User.__table__,
-    UserSettings.__table__,
-    ScheduledNotification.__table__,
-]
+TABLE_NAMES = ("users", "user_settings", "scheduled_notification")
 KIND = NotificationKind.TASK_REMINDER.value
 ENTITY = UUID("33333333-3333-3333-3333-333333333333")
 
@@ -71,12 +67,17 @@ class ExplodingSender:
         raise RuntimeError("telegram is unreachable")
 
 
+def _create_tables(connection: Connection) -> None:
+    tables = [Base.metadata.tables[name] for name in TABLE_NAMES]
+    Base.metadata.create_all(connection, tables=tables)
+
+
 @pytest.fixture
 async def engine() -> AsyncIterator[AsyncEngine]:
     created = create_async_engine(get_settings().database_url, poolclass=NullPool)
     try:
         async with created.begin() as connection:
-            await connection.run_sync(Base.metadata.create_all, tables=TABLES)
+            await connection.run_sync(_create_tables)
     except (SQLAlchemyError, OSError) as exc:
         await created.dispose()
         pytest.skip(f"PostgreSQL is not available: {type(exc).__name__}")
