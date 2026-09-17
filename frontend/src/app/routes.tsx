@@ -10,6 +10,7 @@ import { PrivacyScreen } from '@/screens/PrivacyScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 import { SubscriptionScreen } from '@/screens/SubscriptionScreen';
+import { TasksScreen } from '@/screens/TasksScreen';
 import { TodayScreen } from '@/screens/TodayScreen';
 
 export function AppRoutes(): JSX.Element {
@@ -26,7 +27,7 @@ export function AppRoutes(): JSX.Element {
         <Route path="/settings" element={<SettingsScreen />} />
         <Route path="/privacy" element={<PrivacyScreen />} />
         <Route path="/subscription" element={<SubscriptionScreen />} />
-        <Route path="/tasks" element={<CollectionScreen kind="tasks" />} />
+        <Route path="/tasks" element={<TasksScreen />} />
         <Route path="/events" element={<CollectionScreen kind="events" />} />
         <Route path="/expenses" element={<CollectionScreen kind="expenses" />} />
         <Route path="/meals" element={<CollectionScreen kind="meals" />} />
