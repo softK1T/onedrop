@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { AnalyticsScreen } from '@/screens/AnalyticsScreen';
 import { CaptureScreen } from '@/screens/CaptureScreen';
 import { CollectionScreen } from '@/screens/CollectionScreen';
+import { EventsScreen } from '@/screens/EventsScreen';
 import { InboxScreen } from '@/screens/InboxScreen';
 import { NotesScreen } from '@/screens/NotesScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
@@ -30,7 +31,7 @@ export function AppRoutes(): JSX.Element {
         <Route path="/subscription" element={<SubscriptionScreen />} />
         <Route path="/tasks" element={<TasksScreen />} />
         <Route path="/notes" element={<NotesScreen />} />
-        <Route path="/events" element={<CollectionScreen kind="events" />} />
+        <Route path="/events" element={<EventsScreen />} />
         <Route path="/expenses" element={<CollectionScreen kind="expenses" />} />
         <Route path="/meals" element={<CollectionScreen kind="meals" />} />
         <Route path="/habits" element={<CollectionScreen kind="habits" />} />
