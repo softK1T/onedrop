@@ -14,8 +14,10 @@ from onedrop.api.errors import register_exception_handlers
 from onedrop.api.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
 from onedrop.api.routers import auth as auth_router
 from onedrop.api.routers import capture as capture_router
+from onedrop.api.routers import events as events_router
 from onedrop.api.routers import inbox as inbox_router
 from onedrop.api.routers import system as system_router
+from onedrop.api.routers import tasks as tasks_router
 from onedrop.api.routers import telegram as telegram_router
 from onedrop.config import get_settings
 from onedrop.db.session import dispose_engine
@@ -45,6 +47,8 @@ def build_api_router() -> APIRouter:
     api.include_router(auth_router.router)
     api.include_router(capture_router.router)
     api.include_router(inbox_router.router)
+    api.include_router(tasks_router.router)
+    api.include_router(events_router.router)
     api.include_router(telegram_router.router)
     return api
 
