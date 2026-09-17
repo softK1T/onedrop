@@ -11,6 +11,12 @@ export default [
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: { parser: tsParser, parserOptions: { ecmaVersion: 'latest', sourceType: 'module' } },
     plugins: { '@typescript-eslint': tseslint, 'react-hooks': reactHooks, 'react-refresh': reactRefresh },
-    rules: { ...reactHooks.configs.recommended.rules, ...tseslint.configs.recommended.rules, 'react-refresh/only-export-components': ['warn', { allowConstantExport: true }] },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      ...tseslint.configs.recommended.rules,
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'no-undef': 'off',
+      'no-empty': 'off',
+    },
   },
 ];
