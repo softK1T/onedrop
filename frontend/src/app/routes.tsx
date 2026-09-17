@@ -5,6 +5,7 @@ import { AnalyticsScreen } from '@/screens/AnalyticsScreen';
 import { CaptureScreen } from '@/screens/CaptureScreen';
 import { CollectionScreen } from '@/screens/CollectionScreen';
 import { InboxScreen } from '@/screens/InboxScreen';
+import { NotesScreen } from '@/screens/NotesScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
 import { PrivacyScreen } from '@/screens/PrivacyScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
@@ -28,11 +29,11 @@ export function AppRoutes(): JSX.Element {
         <Route path="/privacy" element={<PrivacyScreen />} />
         <Route path="/subscription" element={<SubscriptionScreen />} />
         <Route path="/tasks" element={<TasksScreen />} />
+        <Route path="/notes" element={<NotesScreen />} />
         <Route path="/events" element={<CollectionScreen kind="events" />} />
         <Route path="/expenses" element={<CollectionScreen kind="expenses" />} />
         <Route path="/meals" element={<CollectionScreen kind="meals" />} />
         <Route path="/habits" element={<CollectionScreen kind="habits" />} />
-        <Route path="/notes" element={<CollectionScreen kind="notes" />} />
       </Route>
       <Route path="*" element={<Navigate to="/today" replace />} />
     </Routes>
