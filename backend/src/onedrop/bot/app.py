@@ -30,10 +30,11 @@ def create_bot(settings: Settings | None = None) -> Bot | None:
 
 def create_dispatcher() -> Dispatcher:
     """Dispatcher with every router attached, commands before free-form input."""
-    from onedrop.bot.handlers import callbacks, capture, commands
+    from onedrop.bot.handlers import callbacks, capture, commands, payments
 
     dispatcher = Dispatcher()
     dispatcher.include_router(commands.router)
+    dispatcher.include_router(payments.router)
     dispatcher.include_router(callbacks.router)
     dispatcher.include_router(capture.router)
     return dispatcher

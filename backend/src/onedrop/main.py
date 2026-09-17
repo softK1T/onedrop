@@ -14,6 +14,7 @@ from onedrop.api.errors import register_exception_handlers
 from onedrop.api.middleware import RequestContextMiddleware, SecurityHeadersMiddleware
 from onedrop.api.routers import analytics as analytics_router
 from onedrop.api.routers import auth as auth_router
+from onedrop.api.routers import billing as billing_router
 from onedrop.api.routers import capture as capture_router
 from onedrop.api.routers import events as events_router
 from onedrop.api.routers import expenses as expenses_router
@@ -61,6 +62,7 @@ def build_api_router() -> APIRouter:
     api.include_router(habits_router.router)
     api.include_router(notes_router.router)
     api.include_router(analytics_router.router)
+    api.include_router(billing_router.router)
     api.include_router(telegram_router.router)
     return api
 
