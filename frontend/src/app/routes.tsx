@@ -3,9 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
 import { AnalyticsScreen } from '@/screens/AnalyticsScreen';
 import { CaptureScreen } from '@/screens/CaptureScreen';
-import { CollectionScreen } from '@/screens/CollectionScreen';
 import { EventsScreen } from '@/screens/EventsScreen';
 import { ExpensesScreen } from '@/screens/ExpensesScreen';
+import { HabitsScreen } from '@/screens/HabitsScreen';
 import { InboxScreen } from '@/screens/InboxScreen';
 import { MealsScreen } from '@/screens/MealsScreen';
 import { NotesScreen } from '@/screens/NotesScreen';
@@ -36,7 +36,7 @@ export function AppRoutes(): JSX.Element {
         <Route path="/events" element={<EventsScreen />} />
         <Route path="/expenses" element={<ExpensesScreen />} />
         <Route path="/meals" element={<MealsScreen />} />
-        <Route path="/habits" element={<CollectionScreen kind="habits" />} />
+        <Route path="/habits" element={<HabitsScreen />} />
       </Route>
       <Route path="*" element={<Navigate to="/today" replace />} />
     </Routes>
