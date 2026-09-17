@@ -5,6 +5,7 @@ import { AnalyticsScreen } from '@/screens/AnalyticsScreen';
 import { CaptureScreen } from '@/screens/CaptureScreen';
 import { CollectionScreen } from '@/screens/CollectionScreen';
 import { EventsScreen } from '@/screens/EventsScreen';
+import { ExpensesScreen } from '@/screens/ExpensesScreen';
 import { InboxScreen } from '@/screens/InboxScreen';
 import { NotesScreen } from '@/screens/NotesScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
@@ -32,7 +33,7 @@ export function AppRoutes(): JSX.Element {
         <Route path="/tasks" element={<TasksScreen />} />
         <Route path="/notes" element={<NotesScreen />} />
         <Route path="/events" element={<EventsScreen />} />
-        <Route path="/expenses" element={<CollectionScreen kind="expenses" />} />
+        <Route path="/expenses" element={<ExpensesScreen />} />
         <Route path="/meals" element={<CollectionScreen kind="meals" />} />
         <Route path="/habits" element={<CollectionScreen kind="habits" />} />
       </Route>
