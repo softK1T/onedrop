@@ -2,7 +2,8 @@
 
 Templates are resolved by locale with an English fallback, and every template
 placeholder is always supplied, so a missing payload field can never leak a raw
-``{placeholder}`` into a user's chat.
+``{placeholder}`` into a user's chat. The locale set matches the Mini App:
+en, ru, pl, uk.
 """
 
 from __future__ import annotations
@@ -65,8 +66,25 @@ TEMPLATES: dict[str, dict[str, str]] = {
             "({spent} z {limit})."
         ),
     },
+    "uk": {
+        NotificationKind.MORNING_DIGEST.value: (
+            "Доброго ранку. План на {local_date}:\n"
+            "Завдань на сьогодні: {tasks}\n"
+            "Подій: {events}\n"
+            "Звичок залишилося: {habits}\n"
+            "Залишок бюджету: {budget}"
+        ),
+        NotificationKind.TASK_REMINDER.value: "Завдання до {when}: {title}",
+        NotificationKind.EVENT_REMINDER.value: "Подія о {when}: {title}",
+        NotificationKind.HABIT_REMINDER.value: "Звичка ще не відмічена сьогодні: {title}",
+        NotificationKind.BUDGET_WARNING.value: (
+            "Увага: витрачено {percent}% ліміту за {period} "
+            "({spent} з {limit})."
+        ),
+    },
 }
 
+SUPPORTED_LOCALES: tuple[str, ...] = tuple(TEMPLATES)
 FALLBACK_TEMPLATE = "OneDrop: {title}"
 
 

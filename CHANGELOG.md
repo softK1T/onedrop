@@ -19,3 +19,28 @@ versioning follows Semantic Versioning once 1.0.0 is released.
 - Billing: free plan limits, Pro plan, Telegram Stars invoices and payment idempotency.
 - Infrastructure: Dockerfiles, Docker Compose stack, Makefile, GitHub Actions, Dependabot,
   CodeQL.
+- Durable notification queue: `scheduled_notification` table (migration `0003_notifications`)
+  with a unique `dedup_key`, attempt counter, `last_error` and worker lock columns, plus a
+  repository that claims rows with `SELECT ... FOR UPDATE SKIP LOCKED` and reclaims locks
+  left behind by a killed worker.
+- Reminder delivery rules: deterministic dedup keys bucketed to the minute, per-period keys
+  for budget warnings, quiet hours that wrap midnight, exponential retry backoff with an
+  attempt limit and per-kind opt-in switches.
+- Notification planning and delivery for five kinds: morning digest, task reminders, event
+  reminders, habit reminders that stop once the habit is logged for the day, and budget
+  warnings at the user threshold and at 100% of the monthly limit.
+- Reminder preferences on `user_settings`: quiet hours window, task and event lead time and
+  the budget warning threshold.
+- Localised notification text for en/ru/pl/uk with an English fallback and placeholder-safe
+  rendering.
+
+### Changed
+- The scheduler process now plans notifications every five minutes and delivers due ones
+  every minute; the ARQ worker exposes `plan_notifications` and `deliver_notifications`.
+
+### Tests
+- Unit coverage for dedup keys, quiet hours, retry backoff, planning windows, locale
+  completeness and money formatting.
+- PostgreSQL integration coverage for dedup uniqueness, `SKIP LOCKED` claiming, restart
+  recovery, retry backoff, permanent failure after the attempt limit, cancellation of
+  disabled kinds and draining a backlog across dispatcher restarts.
