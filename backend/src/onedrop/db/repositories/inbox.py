@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -61,6 +61,20 @@ class InboxRepository:
         if user_id is not None:
             conditions.append(InboxItem.user_id == user_id)
         result = await self._session.execute(select(InboxItem).where(*conditions))
+        return result.scalar_one_or_none()
+
+    async def get_for_update(self, item_id: UUID, *, user_id: UUID) -> InboxItem | None:
+        """Lock one owned capture while its linked records are being replaced."""
+        stmt = (
+            select(InboxItem)
+            .where(
+                InboxItem.id == item_id,
+                InboxItem.user_id == user_id,
+                InboxItem.deleted_at.is_(None),
+            )
+            .with_for_update()
+        )
+        result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def list_for_user(
@@ -119,6 +133,23 @@ class InboxRepository:
         )
         await self._session.flush()
 
+    async def complete_correction(
+        self, item_id: UUID, *, ai_result: dict[str, Any]
+    ) -> None:
+        """Store a user-confirmed result and explicitly clear stale errors/questions."""
+        await self._session.execute(
+            update(InboxItem)
+            .where(InboxItem.id == item_id)
+            .values(
+                status=InboxStatus.COMPLETED.value,
+                ai_result=ai_result,
+                clarification_question=None,
+                error=None,
+                updated_at=datetime.now(tz=UTC),
+            )
+        )
+        await self._session.flush()
+
     async def increment_attempts(self, item_id: UUID) -> None:
         await self._session.execute(
             update(InboxItem)
@@ -135,6 +166,21 @@ class InboxRepository:
             .on_conflict_do_nothing(constraint="uq_inbox_entity_links_entity")
         )
         await self._session.execute(stmt)
+
+    async def replace_links(
+        self, inbox_item_id: UUID, links: list[tuple[str, UUID]]
+    ) -> None:
+        """Replace every entity link inside the caller's transaction."""
+        await self._session.execute(
+            delete(InboxEntityLink).where(InboxEntityLink.inbox_item_id == inbox_item_id)
+        )
+        for entity_type, entity_id in links:
+            await self.add_link(
+                inbox_item_id=inbox_item_id,
+                entity_type=entity_type,
+                entity_id=entity_id,
+            )
+        await self._session.flush()
 
     async def links(self, inbox_item_id: UUID) -> list[InboxEntityLink]:
         stmt = select(InboxEntityLink).where(

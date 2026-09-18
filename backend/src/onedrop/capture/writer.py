@@ -49,7 +49,10 @@ class CaptureWriter:
         for intent in result.actionable_intents:
             created.append(
                 await self._apply_intent(
-                    intent, user_id=user_id, settings=settings, inbox_item_id=inbox_item_id
+                    intent,
+                    user_id=user_id,
+                    settings=settings,
+                    inbox_item_id=inbox_item_id,
                 )
             )
         return created
@@ -178,6 +181,16 @@ class CaptureWriter:
     ) -> CreatedEntity:
         existing = await self._find_habit(user_id, intent.fields.name)
         if existing is not None:
+            if existing.source_inbox_item_id == inbox_item_id:
+                existing.measurement_type = intent.fields.measurement_type
+                existing.target_value = intent.fields.target_value
+                existing.unit = intent.fields.unit
+                existing.schedule = (
+                    {"days": intent.fields.schedule_days}
+                    if intent.fields.schedule_days
+                    else None
+                )
+                await self._session.flush()
             return EntityType.HABIT.value, existing.id
         row = Habit(
             user_id=user_id,
@@ -185,7 +198,11 @@ class CaptureWriter:
             measurement_type=intent.fields.measurement_type,
             target_value=intent.fields.target_value,
             unit=intent.fields.unit,
-            schedule={"days": intent.fields.schedule_days} if intent.fields.schedule_days else None,
+            schedule=(
+                {"days": intent.fields.schedule_days}
+                if intent.fields.schedule_days
+                else None
+            ),
             source_inbox_item_id=inbox_item_id,
         )
         self._session.add(row)

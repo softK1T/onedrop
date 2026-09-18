@@ -6,7 +6,9 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from onedrop.ai.schemas import CaptureResult
 
 
 class StrictModel(BaseModel):
@@ -16,6 +18,20 @@ class StrictModel(BaseModel):
 class TextCaptureRequest(StrictModel):
     text: str = Field(min_length=1, max_length=4000)
     idempotency_key: str | None = Field(default=None, min_length=8, max_length=128)
+
+
+class CaptureCorrectionRequest(StrictModel):
+    """A user-confirmed structured result that replaces a capture's records."""
+
+    result: CaptureResult
+
+    @model_validator(mode="after")
+    def _check_result(self) -> CaptureCorrectionRequest:
+        if self.result.needs_confirmation:
+            raise ValueError("corrected result must not require confirmation")
+        if not self.result.actionable_intents:
+            raise ValueError("corrected result must contain an actionable intent")
+        return self
 
 
 class CaptureAcceptedResponse(BaseModel):

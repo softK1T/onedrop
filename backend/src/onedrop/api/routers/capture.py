@@ -11,6 +11,7 @@ from onedrop.api.dependencies import CurrentUser, DbSession
 from onedrop.capture.media_service import MediaCaptureService
 from onedrop.capture.schemas import (
     CaptureAcceptedResponse,
+    CaptureCorrectionRequest,
     CreatedEntityResponse,
     OperationResponse,
     TextCaptureRequest,
@@ -31,6 +32,34 @@ def _key(provided: str | None) -> str:
     return (provided or f"api:{uuid.uuid4().hex}")[:MAX_IDEMPOTENCY_LENGTH]
 
 
+async def _operation_response(
+    operation_id: uuid.UUID, *, session: DbSession, user_id: uuid.UUID
+) -> OperationResponse:
+    repository = InboxRepository(session)
+    item = await repository.get(operation_id, user_id=user_id)
+    if item is None:
+        raise NotFoundError("Operation not found")
+    links = await repository.links(item.id)
+    return OperationResponse(
+        inbox_item_id=item.id,
+        status=item.status,
+        input_type=item.input_type,
+        created=[
+            CreatedEntityResponse(
+                entity_type=link.entity_type,
+                entity_id=link.entity_id,
+            )
+            for link in links
+        ],
+        clarification_question=item.clarification_question,
+        error=item.error,
+        transcript=item.transcript,
+        ai_result=item.ai_result,
+        processing_ms=item.processing_ms,
+        created_at=item.created_at,
+    )
+
+
 @router.post(
     "/capture/text",
     response_model=CaptureAcceptedResponse,
@@ -41,7 +70,9 @@ async def capture_text(
 ) -> CaptureAcceptedResponse:
     """Accept text and queue AI processing."""
     item = await CaptureService(session).create_text_capture(
-        user_id=user.id, text=payload.text, idempotency_key=_key(payload.idempotency_key)
+        user_id=user.id,
+        text=payload.text,
+        idempotency_key=_key(payload.idempotency_key),
     )
     await enqueue("process_capture", str(item.id), job_id=f"capture:{item.id}")
     return CaptureAcceptedResponse(inbox_item_id=item.id, status=item.status)
@@ -104,23 +135,31 @@ async def get_operation(
     operation_id: uuid.UUID, session: DbSession, user: CurrentUser
 ) -> OperationResponse:
     """Poll one capture: status, created records, clarification question."""
-    repository = InboxRepository(session)
-    item = await repository.get(operation_id, user_id=user.id)
-    if item is None:
-        raise NotFoundError("Operation not found")
-    links = await repository.links(item.id)
-    return OperationResponse(
-        inbox_item_id=item.id,
-        status=item.status,
-        input_type=item.input_type,
-        created=[
-            CreatedEntityResponse(entity_type=link.entity_type, entity_id=link.entity_id)
-            for link in links
-        ],
-        clarification_question=item.clarification_question,
-        error=item.error,
-        transcript=item.transcript,
-        ai_result=item.ai_result,
-        processing_ms=item.processing_ms,
-        created_at=item.created_at,
+    return await _operation_response(
+        operation_id,
+        session=session,
+        user_id=user.id,
+    )
+
+
+@router.post(
+    "/operations/{operation_id}/correction",
+    response_model=OperationResponse,
+)
+async def correct_operation(
+    operation_id: uuid.UUID,
+    payload: CaptureCorrectionRequest,
+    session: DbSession,
+    user: CurrentUser,
+) -> OperationResponse:
+    """Replace a capture's records with user-confirmed structured data."""
+    await CaptureService(session).correct(
+        user_id=user.id,
+        inbox_item_id=operation_id,
+        result=payload.result,
+    )
+    return await _operation_response(
+        operation_id,
+        session=session,
+        user_id=user.id,
     )

@@ -1,8 +1,4 @@
-"""Capture use cases: create, process, undo, retry.
-
-One capture is one transaction. If any intent fails, nothing is written and the
-inbox item is marked `failed`.
-"""
+"""Capture use cases: create, process, correct, undo and retry."""
 
 from __future__ import annotations
 
@@ -17,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from onedrop.ai.factory import build_structured_provider
 from onedrop.ai.normalize import local_now, normalise_capture_result
 from onedrop.ai.providers.base import CaptureContext, StructuredLLMProvider
+from onedrop.ai.schemas import CaptureResult
 from onedrop.billing.plans import limits_for
 from onedrop.billing.usage import UsageService
 from onedrop.capture.writer import CaptureWriter, CreatedEntity
@@ -36,8 +33,10 @@ from onedrop.db.models.notes import Note
 from onedrop.db.models.planner import Event, Task
 from onedrop.db.repositories.inbox import InboxRepository
 from onedrop.db.repositories.users import UserRepository
-from onedrop.errors import NotFoundError, ProviderError, QuotaExceededError
+from onedrop.errors import ConflictError, NotFoundError, ProviderError, QuotaExceededError
 from onedrop.logging import get_logger
+from onedrop.reminders.models import NotificationKind
+from onedrop.reminders.service import ReminderService
 
 logger = get_logger(__name__)
 
@@ -48,6 +47,17 @@ SOFT_DELETABLE = {
     EntityType.MEAL.value: Meal,
     EntityType.NOTE.value: Note,
     EntityType.HABIT.value: Habit,
+}
+
+NOTIFICATION_KIND_BY_ENTITY = {
+    EntityType.TASK.value: NotificationKind.TASK_REMINDER.value,
+    EntityType.EVENT.value: NotificationKind.EVENT_REMINDER.value,
+    EntityType.HABIT.value: NotificationKind.HABIT_REMINDER.value,
+}
+
+CORRECTABLE_STATUSES = {
+    InboxStatus.NEEDS_CONFIRMATION.value,
+    InboxStatus.COMPLETED.value,
 }
 
 
@@ -176,7 +186,10 @@ class CaptureService:
 
         needs_confirmation = (
             result.needs_confirmation
-            or (result.actionable_intents and result.min_confidence() < settings.ai_min_confidence)
+            or (
+                result.actionable_intents
+                and result.min_confidence() < settings.ai_min_confidence
+            )
         )
         if needs_confirmation:
             await self._inbox.set_status(
@@ -208,7 +221,9 @@ class CaptureService:
             )
             for entity_type, entity_id in created:
                 await self._inbox.add_link(
-                    inbox_item_id=item.id, entity_type=entity_type, entity_id=entity_id
+                    inbox_item_id=item.id,
+                    entity_type=entity_type,
+                    entity_id=entity_id,
                 )
             await self._inbox.set_status(
                 item.id,
@@ -241,6 +256,92 @@ class CaptureService:
             remaining_ai=quota.remaining,
         )
 
+    async def correct(
+        self, *, user_id: UUID, inbox_item_id: UUID, result: CaptureResult
+    ) -> CaptureOutcome:
+        """Atomically replace records with a user-confirmed structured result."""
+        item = await self._inbox.get_for_update(inbox_item_id, user_id=user_id)
+        if item is None:
+            raise NotFoundError("Capture not found")
+        if item.status not in CORRECTABLE_STATUSES:
+            raise ConflictError("Capture cannot be corrected in its current state")
+
+        user_settings = await self._users.get_settings(user_id)
+        if user_settings is None:
+            user_settings = await self._users.update_settings(user_id, {})
+        corrected = normalise_capture_result(result, timezone=user_settings.timezone)
+        result_json = corrected.model_dump(mode="json")
+
+        if item.status == InboxStatus.COMPLETED.value and item.ai_result == result_json:
+            return await self._outcome(item)
+
+        old_links = await self._inbox.links(item.id)
+        try:
+            created = await self._writer.apply(
+                user_id=user_id,
+                settings=user_settings,
+                inbox_item_id=item.id,
+                result=corrected,
+            )
+            retained = set(created)
+            for link in old_links:
+                if (link.entity_type, link.entity_id) not in retained:
+                    await self._remove_owned_entity(
+                        item=item,
+                        entity_type=link.entity_type,
+                        entity_id=link.entity_id,
+                    )
+            await self._inbox.replace_links(item.id, created)
+            await self._inbox.complete_correction(item.id, ai_result=result_json)
+            await self._session.commit()
+        except Exception:
+            await self._session.rollback()
+            raise
+
+        return CaptureOutcome(
+            inbox_item_id=item.id,
+            status=InboxStatus.COMPLETED.value,
+            created=tuple(created),
+            clarification_question=None,
+            remaining_ai=0,
+        )
+
+    async def _remove_owned_entity(
+        self, *, item: InboxItem, entity_type: str, entity_id: UUID
+    ) -> None:
+        if entity_type == EntityType.HABIT_LOG.value:
+            await self._session.execute(
+                HabitLog.__table__.delete().where(
+                    HabitLog.__table__.c.id == entity_id,
+                    HabitLog.__table__.c.user_id == item.user_id,
+                    HabitLog.__table__.c.source_inbox_item_id == item.id,
+                )
+            )
+            return
+
+        model = SOFT_DELETABLE.get(entity_type)
+        if model is None:
+            return
+        removal = await self._session.execute(
+            update(model)
+            .where(
+                model.id == entity_id,
+                model.user_id == item.user_id,
+                model.source_inbox_item_id == item.id,
+                model.deleted_at.is_(None),
+            )
+            .values(deleted_at=datetime.now(tz=UTC))
+        )
+        if not removal.rowcount:
+            return
+        kind = NOTIFICATION_KIND_BY_ENTITY.get(entity_type)
+        if kind is not None:
+            await ReminderService(self._session).cancel_for_entity(
+                kind=kind,
+                user_id=item.user_id,
+                entity_id=entity_id,
+            )
+
     async def undo(self, *, user_id: UUID, inbox_item_id: UUID) -> int:
         """Atomically revert every record created by one capture."""
         item = await self._inbox.get(inbox_item_id, user_id=user_id)
@@ -252,23 +353,29 @@ class CaptureService:
         try:
             for link in links:
                 if link.entity_type == EntityType.HABIT_LOG.value:
-                    await self._session.execute(
+                    removal = await self._session.execute(
                         HabitLog.__table__.delete().where(
                             HabitLog.__table__.c.id == link.entity_id,
                             HabitLog.__table__.c.user_id == user_id,
+                            HabitLog.__table__.c.source_inbox_item_id == item.id,
                         )
                     )
-                    reverted += 1
+                    reverted += int(removal.rowcount or 0)
                     continue
                 model = SOFT_DELETABLE.get(link.entity_type)
                 if model is None:
                     continue
-                await self._session.execute(
+                removal = await self._session.execute(
                     update(model)
-                    .where(model.id == link.entity_id, model.user_id == user_id)
+                    .where(
+                        model.id == link.entity_id,
+                        model.user_id == user_id,
+                        model.source_inbox_item_id == item.id,
+                        model.deleted_at.is_(None),
+                    )
                     .values(deleted_at=moment)
                 )
-                reverted += 1
+                reverted += int(removal.rowcount or 0)
             await self._inbox.mark_undone(item.id)
             await self._session.commit()
         except Exception:
@@ -288,19 +395,25 @@ class CaptureService:
         from onedrop.db.models.billing import Subscription
 
         stmt = select(Subscription).where(
-            Subscription.user_id == user_id, Subscription.status == "active"
+            Subscription.user_id == user_id,
+            Subscription.status == "active",
         )
         result = await self._session.execute(stmt)
         subscription = result.scalars().first()
         if subscription is None:
             return Plan.FREE.value
-        if subscription.expires_at is not None and subscription.expires_at < datetime.now(tz=UTC):
+        if (
+            subscription.expires_at is not None
+            and subscription.expires_at < datetime.now(tz=UTC)
+        ):
             return Plan.FREE.value
         return subscription.plan
 
     async def _habit_names(self, user_id: UUID) -> tuple[str, ...]:
         stmt = select(Habit.name).where(
-            Habit.user_id == user_id, Habit.active.is_(True), Habit.deleted_at.is_(None)
+            Habit.user_id == user_id,
+            Habit.active.is_(True),
+            Habit.deleted_at.is_(None),
         )
         result = await self._session.execute(stmt)
         return tuple(result.scalars().all())
