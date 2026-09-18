@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppLayout } from '@/components/AppLayout';
+import { AdminScreen } from '@/screens/AdminScreen';
 import { AnalyticsScreen } from '@/screens/AnalyticsScreen';
 import { CaptureScreen } from '@/screens/CaptureScreen';
 import { EventsScreen } from '@/screens/EventsScreen';
@@ -18,27 +19,26 @@ import { TasksScreen } from '@/screens/TasksScreen';
 import { TodayScreen } from '@/screens/TodayScreen';
 
 export function AppRoutes(): JSX.Element {
-  return (
-    <Routes>
-      <Route path="/onboarding" element={<OnboardingScreen />} />
-      <Route element={<AppLayout />}>
-        <Route path="/today" element={<TodayScreen />} />
-        <Route path="/inbox" element={<InboxScreen />} />
-        <Route path="/inbox/:id" element={<InboxScreen />} />
-        <Route path="/capture" element={<CaptureScreen />} />
-        <Route path="/analytics" element={<AnalyticsScreen />} />
-        <Route path="/profile" element={<ProfileScreen />} />
-        <Route path="/settings" element={<SettingsScreen />} />
-        <Route path="/privacy" element={<PrivacyScreen />} />
-        <Route path="/subscription" element={<SubscriptionScreen />} />
-        <Route path="/tasks" element={<TasksScreen />} />
-        <Route path="/notes" element={<NotesScreen />} />
-        <Route path="/events" element={<EventsScreen />} />
-        <Route path="/expenses" element={<ExpensesScreen />} />
-        <Route path="/meals" element={<MealsScreen />} />
-        <Route path="/habits" element={<HabitsScreen />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/today" replace />} />
-    </Routes>
-  );
+  return <Routes>
+    <Route path="/onboarding" element={<OnboardingScreen />} />
+    <Route element={<AppLayout />}>
+      <Route path="/today" element={<TodayScreen />} />
+      <Route path="/inbox" element={<InboxScreen />} />
+      <Route path="/inbox/:id" element={<InboxScreen />} />
+      <Route path="/capture" element={<CaptureScreen />} />
+      <Route path="/analytics" element={<AnalyticsScreen />} />
+      <Route path="/profile" element={<ProfileScreen />} />
+      <Route path="/settings" element={<SettingsScreen />} />
+      <Route path="/privacy" element={<PrivacyScreen />} />
+      <Route path="/subscription" element={<SubscriptionScreen />} />
+      <Route path="/tasks" element={<TasksScreen />} />
+      <Route path="/notes" element={<NotesScreen />} />
+      <Route path="/events" element={<EventsScreen />} />
+      <Route path="/expenses" element={<ExpensesScreen />} />
+      <Route path="/meals" element={<MealsScreen />} />
+      <Route path="/habits" element={<HabitsScreen />} />
+      <Route path="/admin" element={<AdminScreen />} />
+    </Route>
+    <Route path="*" element={<Navigate to="/today" replace />} />
+  </Routes>;
 }

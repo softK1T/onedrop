@@ -54,12 +54,8 @@ class UserSettingsUpdate(StrictModel):
     morning_digest_hour: int | None = Field(default=None, ge=0, le=23)
     quiet_hours_start: int | None = Field(default=None, ge=0, le=23)
     quiet_hours_end: int | None = Field(default=None, ge=0, le=23)
-    task_reminder_lead_minutes: int | None = Field(
-        default=None, ge=0, le=MAX_LEAD_MINUTES
-    )
-    event_reminder_lead_minutes: int | None = Field(
-        default=None, ge=0, le=MAX_LEAD_MINUTES
-    )
+    task_reminder_lead_minutes: int | None = Field(default=None, ge=0, le=MAX_LEAD_MINUTES)
+    event_reminder_lead_minutes: int | None = Field(default=None, ge=0, le=MAX_LEAD_MINUTES)
     budget_warning_threshold_percent: int | None = Field(default=None, ge=1, le=100)
     allow_training: bool | None = None
     onboarding_completed: bool | None = None
@@ -73,6 +69,7 @@ class UserResponse(BaseModel):
     username: str | None
     locale: str
     created_at: datetime
+    is_admin: bool = False
     settings: UserSettingsResponse
 
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from onedrop.api.dependencies import CurrentUser, DbSession
+from onedrop.config import get_settings
 from onedrop.users.schemas import (
     DeleteAccountResponse,
     ExportResponse,
@@ -20,7 +21,7 @@ router = APIRouter(prefix="/me", tags=["user"])
 
 @router.get("", response_model=UserResponse)
 async def get_me(session: DbSession, user: CurrentUser) -> UserResponse:
-    """Current profile with settings."""
+    """Current profile with settings and a non-sensitive permission flag."""
     settings_row = await UserService(session).settings_for(user.id)
     return UserResponse(
         id=user.id,
@@ -29,6 +30,7 @@ async def get_me(session: DbSession, user: CurrentUser) -> UserResponse:
         username=user.username,
         locale=user.locale,
         created_at=user.created_at,
+        is_admin=user.telegram_user_id in set(get_settings().admin_telegram_user_id_list),
         settings=UserSettingsResponse.model_validate(settings_row),
     )
 
