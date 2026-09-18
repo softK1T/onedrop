@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { AppRoutes } from '@/app/routes';
 import { AuthGate } from '@/components/AuthGate';
+import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { initTelegram, type ThemeName } from '@/lib/telegram';
 
 export function App(): JSX.Element {
@@ -11,10 +12,12 @@ export function App(): JSX.Element {
   useEffect(() => initTelegram(setTheme), []);
 
   return (
-    <BrowserRouter>
-      <AuthGate>
-        <AppRoutes />
-      </AuthGate>
-    </BrowserRouter>
+    <LocaleProvider>
+      <BrowserRouter>
+        <AuthGate>
+          <AppRoutes />
+        </AuthGate>
+      </BrowserRouter>
+    </LocaleProvider>
   );
 }
