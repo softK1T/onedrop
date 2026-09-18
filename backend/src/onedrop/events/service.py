@@ -8,17 +8,14 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from onedrop.ai.normalize import local_day_bounds, local_now
-from onedrop.db.models.enums import EntityType, ReminderKind
 from onedrop.db.models.planner import Event
 from onedrop.db.repositories.events import EventRepository
 from onedrop.db.repositories.users import UserRepository
 from onedrop.errors import NotFoundError
 from onedrop.events.overlap import TimeRange, find_overlaps
 from onedrop.events.schemas import EventCreate, EventUpdate
-from onedrop.reminders.scheduling import (
-    cancel_entity_reminders,
-    reschedule_entity_reminder,
-)
+from onedrop.reminders.models import NotificationKind
+from onedrop.reminders.service import ReminderService
 
 WEEK_DAYS = 7
 
@@ -30,6 +27,7 @@ class EventService:
         self._session = session
         self._events = EventRepository(session)
         self._users = UserRepository(session)
+        self._reminders = ReminderService(session)
 
     async def _timezone(self, user_id: UUID) -> str:
         settings_row = await self._users.get_settings(user_id)
@@ -43,15 +41,6 @@ class EventService:
         event = await self._events.create(
             user_id=user_id, values=payload.model_dump(exclude_unset=False)
         )
-        if payload.reminder_at is not None:
-            await reschedule_entity_reminder(
-                self._session,
-                user_id=user_id,
-                kind=ReminderKind.EVENT.value,
-                entity_type=EntityType.EVENT.value,
-                entity_id=event.id,
-                scheduled_at=payload.reminder_at,
-            )
         await self._session.commit()
         return event, conflicts
 
@@ -95,14 +84,11 @@ class EventService:
             user_id, TimeRange(start=starts_at, end=ends_at), exclude_id=event.id
         )
         event = await self._events.apply_changes(event, changes)
-        if "reminder_at" in changes:
-            await reschedule_entity_reminder(
-                self._session,
+        if "starts_at" in changes:
+            await self._reminders.cancel_for_entity(
+                kind=NotificationKind.EVENT_REMINDER.value,
                 user_id=user_id,
-                kind=ReminderKind.EVENT.value,
-                entity_type=EntityType.EVENT.value,
                 entity_id=event.id,
-                scheduled_at=changes["reminder_at"],
             )
         await self._session.commit()
         return event, conflicts
@@ -110,10 +96,9 @@ class EventService:
     async def delete(self, user_id: UUID, event_id: UUID) -> None:
         event = await self.get(user_id, event_id)
         await self._events.soft_delete(event)
-        await cancel_entity_reminders(
-            self._session,
+        await self._reminders.cancel_for_entity(
+            kind=NotificationKind.EVENT_REMINDER.value,
             user_id=user_id,
-            entity_type=EntityType.EVENT.value,
             entity_id=event.id,
         )
         await self._session.commit()
