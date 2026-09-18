@@ -11,7 +11,6 @@ from onedrop.logging import configure_logging, get_logger
 from onedrop.queue import redis_settings
 from onedrop.workers.jobs import (
     cleanup_media,
-    dispatch_due_reminders,
     process_capture,
     process_image_capture,
     process_voice_capture,
@@ -40,7 +39,6 @@ class WorkerSettings:
         process_capture,
         process_voice_capture,
         process_image_capture,
-        dispatch_due_reminders,
         plan_notifications,
         deliver_notifications,
         cleanup_media,
