@@ -43,6 +43,9 @@ versioning follows Semantic Versioning once 1.0.0 is released.
   note or an event.
 - Today dashboard quick actions: complete, postpone by one day, rename a task and check in a
   habit without leaving the screen.
+- Configurable durable-delivery runtime limits: retry attempt cap, exponential-backoff base
+  and ceiling, stale-lock timeout and claim batch size, validated in `Settings` and consumed
+  by `NotificationDispatcher`.
 
 ### Changed
 - The scheduler process now plans notifications every five minutes and delivers due ones
@@ -51,6 +54,8 @@ versioning follows Semantic Versioning once 1.0.0 is released.
   placeholder is no longer used.
 - Prettier is configured explicitly (single quotes, 90 columns) to match the style the
   frontend is written in.
+- The backend image is multi-stage, non-root and health-checked; Compose now gates API,
+  worker and scheduler startup on healthy dependencies and completed migrations.
 
 ### Tests
 - Unit coverage for dedup keys, quiet hours, retry backoff, planning windows, locale
@@ -60,6 +65,8 @@ versioning follows Semantic Versioning once 1.0.0 is released.
   disabled kinds and draining a backlog across dispatcher restarts.
 - Mini App coverage for the API client, Telegram bootstrap, auth, the shell and all ten
   screens, including optimistic mutations with rollback on every CRUD screen.
+- Runtime configuration tests for reminder retry, lock and claim settings, including
+  rejection of a maximum retry delay lower than the base delay.
 
 ### Known gaps
 - Editing the AI result before it is saved is not implemented: the backend has no endpoint
