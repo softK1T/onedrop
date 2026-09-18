@@ -46,6 +46,9 @@ function operation(overrides: Partial<Operation> = {}): Operation {
     clarification_question: null,
     error: null,
     transcript: null,
+    ai_result: null,
+    processing_ms: null,
+    created_at: '2026-09-17T18:00:00Z',
     ...overrides,
   };
 }
