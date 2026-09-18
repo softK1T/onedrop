@@ -15,15 +15,36 @@ concurrency:
 
 jobs:
   compose:
-    name: Validate Compose file
+    name: Validate and smoke-test Compose
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Validate docker-compose.yml
         run: docker compose --env-file .env.example config --quiet
+
+      - name: Verify pinned MinIO healthcheck dependency
+        run: |
+          docker pull minio/minio:RELEASE.2024-09-13T20-26-02Z
+          docker run --rm --entrypoint sh minio/minio:RELEASE.2024-09-13T20-26-02Z -c 'command -v curl'
+
+      - name: Start Compose stack
+        run: docker compose --env-file .env.example up --build --wait --wait-timeout 180
+
+      - name: Verify API health
+        run: curl --fail --silent --show-error http://127.0.0.1:8000/api/v1/health
+
+      - name: Show Compose diagnostics
+        if: always()
+        run: |
+          docker compose --env-file .env.example ps
+          docker compose --env-file .env.example logs --no-color --tail=200
+
+      - name: Stop Compose stack
+        if: always()
+        run: docker compose --env-file .env.example down --volumes --remove-orphans
 
   backend-image:
     name: Build backend image
