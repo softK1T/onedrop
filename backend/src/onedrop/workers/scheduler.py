@@ -1,4 +1,4 @@
-"""Reminder scheduler process.
+"""Durable notification scheduler process.
 
 A small loop that survives restarts. On every tick it plans due notifications,
 then delivers everything whose ``run_at`` has passed. Planning is idempotent by
@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 from onedrop.config import get_settings
 from onedrop.db.session import dispose_engine
 from onedrop.logging import configure_logging, get_logger
-from onedrop.workers.jobs import cleanup_media, dispatch_due_reminders
+from onedrop.workers.jobs import cleanup_media
 from onedrop.workers.notifications import deliver_notifications, plan_notifications
 
 logger = get_logger(__name__)
@@ -44,7 +44,6 @@ async def run_scheduler(stop: asyncio.Event) -> None:
                 await plan_notifications({})
                 last_plan = now
             await deliver_notifications({})
-            await dispatch_due_reminders({})
             if now.hour == CLEANUP_HOUR_UTC and last_cleanup_day != now.day:
                 await cleanup_media({})
                 last_cleanup_day = now.day

@@ -73,21 +73,6 @@ class MeasurementType(StrEnum):
     NUMERIC = "numeric"
 
 
-class ReminderKind(StrEnum):
-    TASK = "task"
-    EVENT = "event"
-    HABIT = "habit"
-    MORNING_DIGEST = "morning_digest"
-    BUDGET_WARNING = "budget_warning"
-
-
-class ReminderStatus(StrEnum):
-    SCHEDULED = "scheduled"
-    SENT = "sent"
-    CANCELLED = "cancelled"
-    FAILED = "failed"
-
-
 class Plan(StrEnum):
     FREE = "free"
     PRO = "pro"
