@@ -18,6 +18,21 @@ export interface CreatedEntity {
   entity_id: string;
 }
 
+export interface CaptureIntent {
+  type: string;
+  confidence: number;
+  source_fragment: string;
+  fields: Record<string, unknown>;
+}
+
+export interface CaptureResult {
+  language: string;
+  timezone: string;
+  intents: CaptureIntent[];
+  needs_confirmation: boolean;
+  clarification_question: string | null;
+}
+
 export interface Operation {
   inbox_item_id: string;
   status: string;
@@ -26,6 +41,9 @@ export interface Operation {
   clarification_question: string | null;
   error: string | null;
   transcript: string | null;
+  ai_result: CaptureResult | null;
+  processing_ms: number | null;
+  created_at: string;
 }
 
 export interface Dashboard {
