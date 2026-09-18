@@ -11,6 +11,10 @@ versioning follows Semantic Versioning once 1.0.0 is released.
   Alembic migrations, health endpoints, Telegram init-data auth and sessions.
 - Capture pipeline: inbox items, strict AI intent schemas, fake and OpenRouter-compatible
   providers, ARQ worker jobs, idempotency and atomic undo.
+- Capture correction endpoint and Mini App editor: users can replace a validated AI result,
+  atomically undo entities from the previous result and persist the corrected intents. The
+  flow is ownership-scoped, rejects active processing, is idempotent and includes en/ru/pl/uk
+  interface text.
 - Domain modules: tasks, events, expenses, meals, habits, notes, reminders, analytics.
 - Telegram bot: commands, text/voice/photo handlers, status messages, result keyboards,
   reminders and Stars paywall.
@@ -46,10 +50,14 @@ versioning follows Semantic Versioning once 1.0.0 is released.
 - Configurable durable-delivery runtime limits: retry attempt cap, exponential-backoff base
   and ceiling, stale-lock timeout and claim batch size, validated in `Settings` and consumed
   by `NotificationDispatcher`.
+- Docker CI Compose smoke test that waits for the full stack, checks API health, verifies the
+  pinned MinIO image contains the healthcheck command, and prints service logs on failure.
 
 ### Changed
 - The scheduler process now plans notifications every five minutes and delivers due ones
   every minute; the ARQ worker exposes `plan_notifications` and `deliver_notifications`.
+- Legacy reminder runtime code and the `reminders` ORM table were removed in migration
+  `0004_remove_legacy_reminders`; task and event updates cancel pending durable deliveries.
 - Every Mini App collection route now renders a real screen; the read-only collection
   placeholder is no longer used.
 - Prettier is configured explicitly (single quotes, 90 columns) to match the style the
@@ -63,13 +71,10 @@ versioning follows Semantic Versioning once 1.0.0 is released.
 - PostgreSQL integration coverage for dedup uniqueness, `SKIP LOCKED` claiming, restart
   recovery, retry backoff, permanent failure after the attempt limit, cancellation of
   disabled kinds and draining a backlog across dispatcher restarts.
+- PostgreSQL integration coverage for capture correction ownership, clarification state,
+  repeated corrections, idempotency, processing conflicts and existing-habit protection.
 - Mini App coverage for the API client, Telegram bootstrap, auth, the shell and all ten
   screens, including optimistic mutations with rollback on every CRUD screen.
+- Mini App capture-editor coverage for opening, saving and invalid corrected JSON.
 - Runtime configuration tests for reminder retry, lock and claim settings, including
   rejection of a maximum retry delay lower than the base delay.
-
-### Known gaps
-- Editing the AI result before it is saved is not implemented: the backend has no endpoint
-  that accepts a corrected capture result, so the Mini App would have to fake it.
-- The legacy `reminders` table still exists next to `scheduled_notification`; tasks and
-  events write their plans to the legacy table.
