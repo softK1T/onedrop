@@ -1,29 +1,51 @@
 # OneDrop backend image: api, bot, worker, scheduler and migrations.
-FROM python:3.12-slim AS runtime
+#
+# Stage one compiles wheels into a virtualenv, stage two copies only that
+# virtualenv and the sources, so no build toolchain ships to production.
+
+FROM python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-WORKDIR /app
+WORKDIR /build
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl \
+ && apt-get install -y --no-install-recommends build-essential \
  && rm -rf /var/lib/apt/lists/*
 
-# Dependencies first: the layer is reused while only sources change.
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Dependencies first: this layer is reused while only sources change.
 COPY pyproject.toml ./
 COPY src ./src
 RUN pip install --no-cache-dir .
 
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# curl is the only runtime extra, used by the health check below.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd --uid 10001 --create-home --shell /usr/sbin/nologin onedrop
+
+COPY --from=builder /opt/venv /opt/venv
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY scripts ./scripts
+COPY src ./src
 
-# Non-root runtime user.
-RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin onedrop \
- && chown -R onedrop:onedrop /app
+RUN chown -R onedrop:onedrop /app
 USER onedrop
 
 EXPOSE 8000
