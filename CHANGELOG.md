@@ -35,14 +35,22 @@ versioning follows Semantic Versioning once 1.0.0 is released.
   rendering.
 - Mini App settings screen for every reminder preference, with optimistic updates, rollback
   on failure and a localised label table.
-- Mini App task screen with real CRUD: filters, creation, inline rename, completion and
-  deletion, each applied optimistically and rolled back when the request fails.
+- Mini App CRUD screens for tasks, notes, events, expenses, meals and habits: filters,
+  search, creation, inline editing, completion, pinning, note-to-task conversion, day and
+  week agendas, monthly expense summary with budget state, daily nutrition totals and habit
+  check-ins with progress, each mutation applied optimistically and rolled back on failure.
+- Inbox triage: status filters, thumbs feedback and conversion of a capture into a task, a
+  note or an event.
+- Today dashboard quick actions: complete, postpone by one day, rename a task and check in a
+  habit without leaving the screen.
 
 ### Changed
 - The scheduler process now plans notifications every five minutes and delivers due ones
   every minute; the ARQ worker exposes `plan_notifications` and `deliver_notifications`.
-- `/tasks` in the Mini App now renders the task screen instead of the read-only collection
-  placeholder.
+- Every Mini App collection route now renders a real screen; the read-only collection
+  placeholder is no longer used.
+- Prettier is configured explicitly (single quotes, 90 columns) to match the style the
+  frontend is written in.
 
 ### Tests
 - Unit coverage for dedup keys, quiet hours, retry backoff, planning windows, locale
@@ -51,4 +59,10 @@ versioning follows Semantic Versioning once 1.0.0 is released.
   recovery, retry backoff, permanent failure after the attempt limit, cancellation of
   disabled kinds and draining a backlog across dispatcher restarts.
 - Mini App coverage for the API client, Telegram bootstrap, auth, the shell and all ten
-  screens, including optimistic task and settings mutations with rollback.
+  screens, including optimistic mutations with rollback on every CRUD screen.
+
+### Known gaps
+- Editing the AI result before it is saved is not implemented: the backend has no endpoint
+  that accepts a corrected capture result, so the Mini App would have to fake it.
+- The legacy `reminders` table still exists next to `scheduled_notification`; tasks and
+  events write their plans to the legacy table.

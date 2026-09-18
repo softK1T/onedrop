@@ -25,6 +25,11 @@ import {
 } from '@/lib/expenses';
 import { formatMoney } from '@/lib/format';
 
+/** An amount is unusable until it parses to a positive number of minor units. */
+function isAmountEmpty(minor: number | null): boolean {
+  return minor === null || minor === 0;
+}
+
 function draftRecord(draft: ExpenseDraft): ExpenseRecord {
   const now = new Date().toISOString();
   return {
@@ -111,7 +116,7 @@ export function ExpensesScreen(): JSX.Element {
   const minor = toMinorUnits(amount);
 
   const submit = (): void => {
-    if (minor === null || minor === 0) return;
+    if (isAmountEmpty(minor) || minor === null) return;
     create.mutate({
       amount_minor: minor,
       currency,
@@ -251,7 +256,7 @@ export function ExpensesScreen(): JSX.Element {
         />
         <button
           className="od-button-primary w-full disabled:opacity-50"
-          disabled={miner(minor)}
+          disabled={isAmountEmpty(minor)}
         >
           {t('add')}
         </button>
@@ -301,9 +306,7 @@ export function ExpensesScreen(): JSX.Element {
                   </div>
                 ) : (
                   <>
-                    <p className="font-medium">
-                      {formatMoney(item.amount_minor, item.currency)}
-                    </p>
+                    <p className="font-medium">{formatMoney(item.amount_minor, item.currency)}</p>
                     <p className="mt-1 text-xs text-ink-muted">
                       {t(`cat_${item.category}`)}
                       {item.merchant ? ` · ${item.merchant}` : ''}
@@ -337,8 +340,4 @@ export function ExpensesScreen(): JSX.Element {
       </div>
     </section>
   );
-}
-
-function miner(minor: number | null): boolean {
-  return minor === null || minor === 0;
 }
