@@ -20,6 +20,7 @@ class EventCreate(StrictModel):
     title: str = Field(min_length=1, max_length=200)
     starts_at: datetime
     ends_at: datetime | None = None
+    reminder_at: datetime | None = None
     location: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
 
@@ -34,6 +35,7 @@ class EventUpdate(StrictModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     starts_at: datetime | None = None
     ends_at: datetime | None = None
+    reminder_at: datetime | None = None
     location: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
     status: StatusCode | None = None
@@ -46,6 +48,7 @@ class EventResponse(BaseModel):
     title: str
     starts_at: datetime
     ends_at: datetime | None
+    reminder_at: datetime | None
     location: str | None
     description: str | None
     status: str
@@ -54,11 +57,6 @@ class EventResponse(BaseModel):
 
 
 class EventWithConflicts(BaseModel):
-    """Saved event plus the ids of events it overlaps with.
-
-    Overlaps are reported, never blocking: the user decides.
-    """
-
     event: EventResponse
     conflicts: list[UUID] = Field(default_factory=list)
 

@@ -20,6 +20,7 @@ class TaskCreate(StrictModel):
     title: str = Field(min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
     due_at: datetime | None = None
+    reminder_at: datetime | None = None
     priority: PriorityCode = "normal"
     category: str | None = Field(default=None, max_length=32)
 
@@ -28,6 +29,7 @@ class TaskUpdate(StrictModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
     due_at: datetime | None = None
+    reminder_at: datetime | None = None
     priority: PriorityCode | None = None
     status: StatusCode | None = None
     category: str | None = Field(default=None, max_length=32)
@@ -40,6 +42,7 @@ class TaskResponse(BaseModel):
     title: str
     description: str | None
     due_at: datetime | None
+    reminder_at: datetime | None
     priority: str
     status: str
     category: str | None

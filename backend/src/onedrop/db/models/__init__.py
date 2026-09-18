@@ -13,6 +13,7 @@ from onedrop.db.models.inbox import (
 from onedrop.db.models.notifications import ScheduledNotification
 from onedrop.db.models.notes import Note
 from onedrop.db.models.planner import Event, Task
+from onedrop.db.models.reminders import Reminder
 from onedrop.db.models.user import AuthSession, TelegramUpdate, User, UserSettings
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     "Meal",
     "Note",
     "Payment",
+    "Reminder",
     "ScheduledNotification",
     "Subscription",
     "Task",
