@@ -14,7 +14,7 @@ from typing import Any
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from onedrop.ai.normalize import local_day_bounds
@@ -329,22 +329,21 @@ class ReminderService:
                 Task.user_id == user_id,
                 Task.deleted_at.is_(None),
                 Task.status == TaskStatus.OPEN.value,
-                or_(Task.reminder_at.is_not(None), Task.due_at.is_not(None)),
+                Task.due_at.is_not(None),
             )
             .order_by(Task.due_at)
             .limit(MAX_ENTITIES_PER_USER)
         )
         plans: list[PlannedNotification] = []
         for task in (await self._session.execute(stmt)).scalars().all():
-            moment = task.reminder_at or task.due_at
-            if moment is None or moment > window_end:
+            if task.due_at is None or task.due_at > window_end:
                 continue
             plan = plan_entity_reminder(
                 kind=kind,
                 user_id=user_id,
                 entity_id=task.id,
                 title=task.title,
-                moment=moment,
+                moment=task.due_at,
                 prefs=prefs,
                 now=now,
             )
@@ -373,13 +372,12 @@ class ReminderService:
         )
         plans: list[PlannedNotification] = []
         for event in (await self._session.execute(stmt)).scalars().all():
-            moment = event.reminder_at or event.starts_at
             plan = plan_entity_reminder(
                 kind=kind,
                 user_id=user_id,
                 entity_id=event.id,
                 title=event.title,
-                moment=moment,
+                moment=event.starts_at,
                 prefs=prefs,
                 now=now,
             )

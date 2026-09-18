@@ -1,4 +1,4 @@
-"""Remove the obsolete reminders queue.
+"""Remove the obsolete reminders queue and entity-level reminder timestamps.
 
 Revision ID: 0004_remove_legacy_reminders
 Revises: 0003_notifications
@@ -24,9 +24,13 @@ def upgrade() -> None:
     op.drop_index("ix_reminders_user_id_scheduled_at", table_name="reminders")
     op.drop_index("ix_reminders_status_scheduled_at", table_name="reminders")
     op.drop_table("reminders")
+    op.drop_column("tasks", "reminder_at")
+    op.drop_column("events", "reminder_at")
 
 
 def downgrade() -> None:
+    op.add_column("events", sa.Column("reminder_at", sa.DateTime(timezone=True), nullable=True))
+    op.add_column("tasks", sa.Column("reminder_at", sa.DateTime(timezone=True), nullable=True))
     op.create_table(
         "reminders",
         sa.Column("id", sa.Uuid(as_uuid=True), nullable=False),

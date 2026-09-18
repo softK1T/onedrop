@@ -38,7 +38,6 @@ class Task(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
         String(12), nullable=False, default=TaskStatus.OPEN.value, server_default="open"
     )
     category: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    reminder_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     source_inbox_item_id: Mapped[UUID | None] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("inbox_items.id", ondelete="SET NULL"), nullable=True
@@ -61,7 +60,6 @@ class Event(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     location: Mapped[str | None] = mapped_column(String(200), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    reminder_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(
         String(12), nullable=False, default=EventStatus.PLANNED.value, server_default="planned"
     )

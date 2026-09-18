@@ -15,14 +15,14 @@ an IANA string (for example `Europe/Warsaw`). User-owned entities use soft delet
 | `inbox_items` | every capture | `input_type`, `raw_text`, `transcript`, `telegram_update_id`, `status`, `error`, `ai_result` JSONB, `processing_ms`, `ai_cost_micro`, `provider`, `model`, `idempotency_key` unique |
 | `inbox_entity_links` | capture -> entity | `inbox_item_id`, `entity_type`, `entity_id`, unique together |
 | `ai_operations` | usage ledger | `operation_type`, `provider`, `model`, `input_tokens`, `output_tokens`, `cost_micro`, `duration_ms`, `status`, unique `idempotency_key` |
-| `tasks` | tasks | `title`, `description`, `due_at`, `priority`, `status`, `category`, `reminder_at`, `completed_at`, `source_inbox_item_id` |
-| `events` | events | `title`, `starts_at`, `ends_at`, `location`, `description`, `reminder_at`, `status`, check `ends_at >= starts_at` |
+| `tasks` | tasks | `title`, `description`, `due_at`, `priority`, `status`, `category`, `completed_at`, `source_inbox_item_id` |
+| `events` | events | `title`, `starts_at`, `ends_at`, `location`, `description`, `status`, check `ends_at >= starts_at` |
 | `expenses` | money | `amount_minor` bigint, `currency`, `base_amount_minor`, `base_currency`, `fx_rate` numeric, `category`, `merchant`, `occurred_at`, check `amount_minor >= 0` |
 | `meals` | nutrition | `meal_type`, `eaten_at`, `title`, `calories`, `protein`, `fat`, `carbohydrates`, `estimated` |
-| `habits` | habits | `name`, `measurement_type` (`boolean`/`numeric`), `target_value`, `unit`, `schedule` JSONB, `active` |
+| `habits` | habits | `name`, `measurement_type` (`boolean`/`numeric`), `target_value`, `unit`, `schedule` JSONB, `active`, `reminder_hour` |
 | `habit_logs` | habit events | `habit_id`, `value`, `logged_at`, `source_inbox_item_id` |
 | `notes` | notes | `title`, `content`, `tags` (text[]), `pinned` |
-| `reminders` | outbound notifications | `kind`, `entity_type`, `entity_id`, `scheduled_at`, `sent_at`, `status`, unique `idempotency_key` |
+| `scheduled_notification` | durable outbound notifications | `kind`, `payload` JSONB, `run_at`, `status`, `attempts`, `last_error`, unique `dedup_key`, worker lock columns |
 | `subscriptions` | plans | `plan`, `status`, `started_at`, `expires_at`, `source` |
 | `payments` | Stars payments | unique `telegram_payment_charge_id`, `amount_stars`, `payload`, `status` |
 | `usage_counters` | limits | `user_id`, `period_key`, `scope` (`daily`/`monthly`/`bonus`), `used`, unique together |
@@ -37,10 +37,18 @@ an IANA string (for example `Europe/Warsaw`). User-owned entities use soft delet
 - `EventStatus`: `planned`, `done`, `cancelled`
 - `Priority`: `low`, `normal`, `high`
 - `MealType`: `breakfast`, `lunch`, `dinner`, `snack`
-- `ReminderKind`: `task`, `event`, `habit`, `morning_digest`, `budget_warning`
+- `NotificationKind`: `morning_digest`, `task_reminder`, `event_reminder`, `habit_reminder`, `budget_warning`
+- `DeliveryStatus`: `pending`, `sent`, `failed`, `cancelled`
 - `Plan`: `free`, `pro`
 - `SubscriptionStatus`: `active`, `expired`, `cancelled`
 - `ExpenseCategory`: `food`, `transport`, `housing`, `health`, `entertainment`, `shopping`, `bills`, `education`, `travel`, `other`
+
+## Reminder rules
+
+Task reminders are derived from `due_at` and the user's configured lead time. Event reminders
+are derived from `starts_at` and the event lead time. Habit reminders retain their per-habit
+`reminder_hour`. The planning pass stores deliveries in `scheduled_notification`; completion,
+cancellation, deletion or schedule changes cancel matching pending rows before the next pass.
 
 ## Money rules
 
@@ -53,4 +61,5 @@ reports never change. If no rate is available, `base_amount_minor` and `fx_rate`
 
 `(user_id, due_at)` on tasks, `(user_id, starts_at)` on events, `(user_id, occurred_at)` on
 expenses, `(user_id, eaten_at)` on meals, `(habit_id, logged_at)` on habit logs,
-`(user_id, created_at)` on inbox items and notes, `(status, scheduled_at)` on reminders.
+`(user_id, created_at)` on inbox items and notes, `(status, run_at)` and `(user_id, run_at)`
+on scheduled notifications.

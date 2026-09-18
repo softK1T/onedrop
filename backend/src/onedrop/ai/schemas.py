@@ -52,7 +52,6 @@ class TaskFields(StrictBase):
     due_at: datetime | None = None
     priority: PriorityCode = "normal"
     category: str | None = Field(default=None, max_length=32)
-    reminder_at: datetime | None = None
 
 
 class EventFields(StrictBase):
@@ -61,7 +60,6 @@ class EventFields(StrictBase):
     ends_at: datetime | None = None
     location: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
-    reminder_at: datetime | None = None
 
     @model_validator(mode="after")
     def _check_range(self) -> EventFields:

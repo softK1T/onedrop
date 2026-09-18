@@ -22,7 +22,6 @@ class EventCreate(StrictModel):
     ends_at: datetime | None = None
     location: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
-    reminder_at: datetime | None = None
 
     @model_validator(mode="after")
     def _check_range(self) -> EventCreate:
@@ -37,7 +36,6 @@ class EventUpdate(StrictModel):
     ends_at: datetime | None = None
     location: str | None = Field(default=None, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
-    reminder_at: datetime | None = None
     status: StatusCode | None = None
 
 
@@ -50,7 +48,6 @@ class EventResponse(BaseModel):
     ends_at: datetime | None
     location: str | None
     description: str | None
-    reminder_at: datetime | None
     status: str
     source_inbox_item_id: UUID | None
     created_at: datetime

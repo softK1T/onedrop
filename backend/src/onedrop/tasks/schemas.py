@@ -22,7 +22,6 @@ class TaskCreate(StrictModel):
     due_at: datetime | None = None
     priority: PriorityCode = "normal"
     category: str | None = Field(default=None, max_length=32)
-    reminder_at: datetime | None = None
 
 
 class TaskUpdate(StrictModel):
@@ -32,7 +31,6 @@ class TaskUpdate(StrictModel):
     priority: PriorityCode | None = None
     status: StatusCode | None = None
     category: str | None = Field(default=None, max_length=32)
-    reminder_at: datetime | None = None
 
 
 class TaskResponse(BaseModel):
@@ -45,7 +43,6 @@ class TaskResponse(BaseModel):
     priority: str
     status: str
     category: str | None
-    reminder_at: datetime | None
     completed_at: datetime | None
     source_inbox_item_id: UUID | None
     created_at: datetime

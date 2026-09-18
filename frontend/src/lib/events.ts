@@ -11,7 +11,6 @@ export interface EventRecord {
   ends_at: string | null;
   location: string | null;
   description: string | null;
-  reminder_at: string | null;
   status: string;
   source_inbox_item_id: string | null;
   created_at: string;
@@ -37,7 +36,6 @@ export interface EventDraft {
   ends_at?: string | null;
   location?: string | null;
   description?: string | null;
-  reminder_at?: string | null;
 }
 
 export interface EventChanges {

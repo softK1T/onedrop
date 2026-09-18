@@ -14,7 +14,6 @@ export interface TaskRecord {
   priority: string;
   status: string;
   category: string | null;
-  reminder_at: string | null;
   completed_at: string | null;
   source_inbox_item_id: string | null;
   created_at: string;
@@ -33,7 +32,6 @@ export interface TaskDraft {
   due_at?: string | null;
   priority?: TaskPriority;
   description?: string | null;
-  reminder_at?: string | null;
 }
 
 export function taskListKey(filter: TaskFilter): (string | TaskFilter)[] {

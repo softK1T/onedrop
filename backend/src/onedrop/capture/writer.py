@@ -91,7 +91,6 @@ class CaptureWriter:
             due_at=intent.fields.due_at,
             priority=intent.fields.priority,
             category=intent.fields.category,
-            reminder_at=intent.fields.reminder_at,
             source_inbox_item_id=inbox_item_id,
         )
         self._session.add(row)
@@ -108,7 +107,6 @@ class CaptureWriter:
             ends_at=intent.fields.ends_at,
             location=intent.fields.location,
             description=intent.fields.description,
-            reminder_at=intent.fields.reminder_at,
             source_inbox_item_id=inbox_item_id,
         )
         self._session.add(row)
