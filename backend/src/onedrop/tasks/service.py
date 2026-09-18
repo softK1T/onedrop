@@ -17,8 +17,6 @@ from onedrop.tasks.schemas import TaskCreate, TaskUpdate
 
 
 class TaskService:
-    """Application service for tasks."""
-
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._tasks = TaskRepository(session)
@@ -26,26 +24,22 @@ class TaskService:
         self._reminders = ReminderService(session)
 
     async def create(self, user_id: UUID, payload: TaskCreate) -> Task:
-        task = await self._tasks.create(
-            user_id=user_id, values=payload.model_dump(exclude_unset=False)
+        task = await self._tasks.create(user_id=user_id, values=payload.model_dump(exclude_unset=False))
+        await self._reminders.sync_entity(
+            kind=NotificationKind.TASK_REMINDER.value,
+            entity_type="task",
+            user_id=user_id,
+            entity_id=task.id,
+            scheduled_at=task.reminder_at,
+            payload={"title": task.title, "moment": task.due_at.isoformat() if task.due_at else None},
         )
         await self._session.commit()
         return task
 
-    async def list(
-        self,
-        user_id: UUID,
-        *,
-        filter_name: str,
-        limit: int,
-        offset: int,
-    ) -> tuple[list[Task], bool]:
+    async def list(self, user_id: UUID, *, filter_name: str, limit: int, offset: int) -> tuple[list[Task], bool]:
         settings_row = await self._users.get_settings(user_id)
         timezone = settings_row.timezone if settings_row is not None else "UTC"
-        window = build_filter_window(filter_name, timezone)
-        rows = await self._tasks.list(
-            user_id, window=window, limit=limit + 1, offset=offset
-        )
+        rows = await self._tasks.list(user_id, window=build_filter_window(filter_name, timezone), limit=limit + 1, offset=offset)
         return rows[:limit], len(rows) > limit
 
     async def get(self, user_id: UUID, task_id: UUID) -> Task:
@@ -58,32 +52,26 @@ class TaskService:
         task = await self.get(user_id, task_id)
         changes = payload.model_dump(exclude_unset=True)
         task = await self._tasks.apply_changes(task, changes)
-        if "due_at" in changes:
-            await self._reminders.cancel_for_entity(
+        if {"reminder_at", "title", "due_at"} & changes.keys():
+            await self._reminders.sync_entity(
                 kind=NotificationKind.TASK_REMINDER.value,
+                entity_type="task",
                 user_id=user_id,
                 entity_id=task.id,
+                scheduled_at=task.reminder_at,
+                payload={"title": task.title, "moment": task.due_at.isoformat() if task.due_at else None},
             )
         await self._session.commit()
         return task
 
     async def complete(self, user_id: UUID, task_id: UUID) -> Task:
-        task = await self.get(user_id, task_id)
-        task = await self._tasks.complete(task)
-        await self._reminders.cancel_for_entity(
-            kind=NotificationKind.TASK_REMINDER.value,
-            user_id=user_id,
-            entity_id=task.id,
-        )
+        task = await self._tasks.complete(await self.get(user_id, task_id))
+        await self._reminders.cancel_for_entity(kind=NotificationKind.TASK_REMINDER.value, user_id=user_id, entity_id=task.id)
         await self._session.commit()
         return task
 
     async def delete(self, user_id: UUID, task_id: UUID) -> None:
         task = await self.get(user_id, task_id)
         await self._tasks.soft_delete(task)
-        await self._reminders.cancel_for_entity(
-            kind=NotificationKind.TASK_REMINDER.value,
-            user_id=user_id,
-            entity_id=task.id,
-        )
+        await self._reminders.cancel_for_entity(kind=NotificationKind.TASK_REMINDER.value, user_id=user_id, entity_id=task.id)
         await self._session.commit()
